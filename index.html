@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Gut Health Protocol</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-content">
+            <h1 class="welcome-headline">Discover Your Personal Gut Health Protocol</h1>
+            <p class="welcome-subheadline">Take the first step toward lasting relief and digestive wellness. In just 5 minutes, we'll create a personalized path to help you transform your gut health.</p>
+            <button class="start-button" onclick="startQuiz()">Begin Your Journey</button>
+        </div>
+    </div>
+    <div class="chat-container" id="chatContainer" style="display: none;">
+        <div class="chat-header">
+            <h1>Gut Health Assessment</h1>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be dynamically inserted here -->
+        </div>
+        <div class="chat-input-container" id="chatInputContainer">
+            <!-- Input will be dynamically inserted based on question type -->
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
