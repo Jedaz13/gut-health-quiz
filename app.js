@@ -255,11 +255,6 @@ function scrollToBottom() {
 async function showQuestion(questionId) {
     console.log('showQuestion called with:', questionId);
 
-    if (isProcessing) {
-        console.log('Already processing, skipping showQuestion');
-        return;
-    }
-
     const question = questions[questionId];
     if (!question) {
         console.error('Question not found:', questionId);
