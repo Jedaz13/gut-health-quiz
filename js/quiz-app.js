@@ -309,6 +309,9 @@ function waitForButtonClick(options) {
         const next = e.target.dataset.next;
         const text = e.target.textContent;
 
+        // Remove listener before processing
+        inputContainer.removeEventListener('click', handleClick);
+
         // Add user message
         addMessage(text, 'user');
 
@@ -323,7 +326,7 @@ function waitForButtonClick(options) {
       }
     };
 
-    inputContainer.addEventListener('click', handleClick, { once: true });
+    inputContainer.addEventListener('click', handleClick);
   });
 }
 
@@ -366,6 +369,9 @@ function waitForResponse(step) {
           const value = e.target.dataset.value;
           const text = e.target.textContent;
 
+          // Remove listener before processing
+          inputContainer.removeEventListener('click', handleClick);
+
           addMessage(text, 'user');
           inputContainer.innerHTML = '';
 
@@ -391,7 +397,7 @@ function waitForResponse(step) {
         }
       };
 
-      inputContainer.addEventListener('click', handleClick, { once: true });
+      inputContainer.addEventListener('click', handleClick);
 
     } else if (step.inputType === 'multi') {
       // Multi-select checkboxes
