@@ -3,8 +3,8 @@
 
 // Configuration
 const CONFIG = {
-  // Formspree form ID - replace with your actual form ID
-  FORMSPREE_URL: 'https://formspree.io/f/YOUR_FORM_ID',
+  // Make.com webhook URL
+  WEBHOOK_URL: 'https://hook.eu1.make.com/5uubblyocz70syh9xptkg248ycauy5pd',
   // Avatar image path (fallback to SVG if PNG not available)
   AVATAR_PATH: 'assets/rebecca-avatar.png',
   AVATAR_FALLBACK: 'assets/rebecca-avatar.svg',
@@ -545,9 +545,9 @@ function scrollToBottom() {
 }
 
 /**
- * Submit the quiz data to Formspree
+ * Submit the quiz data to Make.com webhook
  */
-async function submitToFormspree() {
+async function submitToWebhook() {
   const submission = formatSubmissionData(
     state.answers,
     state.protocol,
@@ -558,33 +558,67 @@ async function submitToFormspree() {
   // Save to localStorage as backup
   saveToLocalStorage(submission);
 
-  // Submit to Formspree
+  // Build payload with all fields separately
+  const payload = {
+    // Contact info
+    name: state.userName,
+    email: state.userEmail,
+
+    // Protocol info
+    protocol_number: state.protocol.protocol,
+    protocol_name: state.protocol.name,
+    protocol_description: state.protocol.description,
+
+    // Open-ended responses (Q17 & Q18) - easy access
+    q17_hardest_part: state.answers.q17_hardest_part || '',
+    q18_vision: state.answers.q18_vision || '',
+
+    // All question answers separately
+    q1_weight_loss: state.answers.q1_weight_loss || '',
+    q2_blood: state.answers.q2_blood || '',
+    q3_family_history: state.answers.q3_family_history || '',
+    q4_colonoscopy: state.answers.q4_colonoscopy || '',
+    q5_primary_complaint: state.answers.q5_primary_complaint || '',
+    q6_frequency: state.answers.q6_frequency || '',
+    q7_stool_type: state.answers.q7_stool_type || '',
+    q8_bloating_timing: state.answers.q8_bloating_timing || '',
+    q9_pain_location: state.answers.q9_pain_location || '',
+    q10_duration: state.answers.q10_duration || '',
+    q11_diagnoses: Array.isArray(state.answers.q11_diagnoses)
+      ? state.answers.q11_diagnoses.join(', ')
+      : (state.answers.q11_diagnoses || ''),
+    q12_treatments: Array.isArray(state.answers.q12_treatments)
+      ? state.answers.q12_treatments.join(', ')
+      : (state.answers.q12_treatments || ''),
+    q13_stress_impact: state.answers.q13_stress_impact || '',
+    q14_anxiety_depression: state.answers.q14_anxiety_depression || '',
+    q15_sleep_quality: state.answers.q15_sleep_quality || '',
+    q16_life_impact: state.answers.q16_life_impact || '',
+
+    // Red flag status
+    had_red_flags: state.answers.had_red_flags || false,
+
+    // Timestamp
+    submitted_at: new Date().toISOString()
+  };
+
+  // Submit to Make.com webhook
   try {
-    const response = await fetch(CONFIG.FORMSPREE_URL, {
+    const response = await fetch(CONFIG.WEBHOOK_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        name: state.userName,
-        email: state.userEmail,
-        protocol: state.protocol.name,
-        protocol_description: state.protocol.description,
-        hardest_part: state.answers.q17_hardest_part || '',
-        vision: state.answers.q18_vision || '',
-        all_answers: JSON.stringify(state.answers),
-        submitted_at: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-      console.error('Formspree submission failed:', response.statusText);
+      console.error('Webhook submission failed:', response.statusText);
     } else {
       console.log('Submission successful');
     }
   } catch (error) {
-    console.error('Error submitting to Formspree:', error);
+    console.error('Error submitting to webhook:', error);
   }
 
   return submission;
@@ -595,7 +629,7 @@ const originalProcessSection = processSection;
 processSection = async function(sectionKey) {
   if (sectionKey === 'confirmation') {
     // Submit data before showing confirmation
-    await submitToFormspree();
+    await submitToWebhook();
   } else if (sectionKey === 'exit_final') {
     // Submit red flag exit data
     await submitRedFlagExit();
@@ -604,15 +638,52 @@ processSection = async function(sectionKey) {
 };
 
 /**
- * Submit red flag exit data to Formspree
+ * Submit red flag exit data to Make.com webhook
  */
 async function submitRedFlagExit() {
-  const submission = {
+  // Build payload with all fields separately
+  const payload = {
+    // Contact info
     name: state.userName,
     email: state.userEmail,
+
+    // Exit type
+    submission_type: 'red_flag_exit',
     red_flag_exit: true,
     had_red_flags: true,
-    answers: state.answers,
+
+    // Protocol info (not determined for red flag exits)
+    protocol_number: 0,
+    protocol_name: 'Red Flag Exit',
+    protocol_description: 'User exited after red flag warning - requested supportive tips',
+
+    // Open-ended responses (Q17 & Q18) - may not be filled
+    q17_hardest_part: state.answers.q17_hardest_part || '',
+    q18_vision: state.answers.q18_vision || '',
+
+    // All question answers separately (partial for red flag exits)
+    q1_weight_loss: state.answers.q1_weight_loss || '',
+    q2_blood: state.answers.q2_blood || '',
+    q3_family_history: state.answers.q3_family_history || '',
+    q4_colonoscopy: state.answers.q4_colonoscopy || '',
+    q5_primary_complaint: state.answers.q5_primary_complaint || '',
+    q6_frequency: state.answers.q6_frequency || '',
+    q7_stool_type: state.answers.q7_stool_type || '',
+    q8_bloating_timing: state.answers.q8_bloating_timing || '',
+    q9_pain_location: state.answers.q9_pain_location || '',
+    q10_duration: state.answers.q10_duration || '',
+    q11_diagnoses: Array.isArray(state.answers.q11_diagnoses)
+      ? state.answers.q11_diagnoses.join(', ')
+      : (state.answers.q11_diagnoses || ''),
+    q12_treatments: Array.isArray(state.answers.q12_treatments)
+      ? state.answers.q12_treatments.join(', ')
+      : (state.answers.q12_treatments || ''),
+    q13_stress_impact: state.answers.q13_stress_impact || '',
+    q14_anxiety_depression: state.answers.q14_anxiety_depression || '',
+    q15_sleep_quality: state.answers.q15_sleep_quality || '',
+    q16_life_impact: state.answers.q16_life_impact || '',
+
+    // Timestamp
     submitted_at: new Date().toISOString()
   };
 
@@ -620,36 +691,28 @@ async function submitRedFlagExit() {
   try {
     const existingData = localStorage.getItem('gutQuizRedFlagExits') || '[]';
     const submissions = JSON.parse(existingData);
-    submissions.push(submission);
+    submissions.push(payload);
     localStorage.setItem('gutQuizRedFlagExits', JSON.stringify(submissions));
   } catch (e) {
     console.error('Failed to save to localStorage:', e);
   }
 
-  // Submit to Formspree
+  // Submit to Make.com webhook
   try {
-    const response = await fetch(CONFIG.FORMSPREE_URL, {
+    const response = await fetch(CONFIG.WEBHOOK_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        name: state.userName,
-        email: state.userEmail,
-        type: 'red_flag_exit',
-        message: 'User exited after red flag warning - requested supportive tips',
-        all_answers: JSON.stringify(state.answers),
-        submitted_at: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-      console.error('Formspree submission failed:', response.statusText);
+      console.error('Webhook submission failed:', response.statusText);
     } else {
       console.log('Red flag exit submission successful');
     }
   } catch (error) {
-    console.error('Error submitting to Formspree:', error);
+    console.error('Error submitting to webhook:', error);
   }
 }
