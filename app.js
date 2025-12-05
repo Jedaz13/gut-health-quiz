@@ -248,7 +248,13 @@ function addUserMessage(text) {
 
 // Scroll to bottom of chat
 function scrollToBottom() {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Use requestAnimationFrame to ensure DOM has updated before scrolling
+    requestAnimationFrame(() => {
+        chatMessages.scroll({
+            top: chatMessages.scrollHeight,
+            behavior: 'smooth'
+        });
+    });
 }
 
 // Show question based on type
