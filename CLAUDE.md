@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A conversational gut health quiz application that uses a chat bubble interface (iMessage/Messenger style) to guide users through a health assessment and route them to one of six personalized gut health protocols. The application is built with vanilla HTML, CSS, and JavaScript for easy hosting anywhere.
+A WhatsApp-style conversational gut health quiz application that guides users through a health assessment with Rebecca Taylor (RNutr) as the guide. Users are routed to one of six personalized gut health protocols based on their responses. The application is built with vanilla HTML, CSS, and JavaScript for easy hosting anywhere.
 
 ## Tech Stack
 
 - **HTML/CSS/JavaScript**: Vanilla implementation, no frameworks or build tools
-- **Styling**: Mobile-first responsive design with iMessage-style chat bubbles
-- **Data Collection**: Form data sent to webhook (Make/Zapier) for Google Sheets integration
+- **Styling**: Mobile-first responsive design with WhatsApp-style chat bubbles
+- **Data Collection**: Form submissions via Formspree + localStorage backup
 - **Hosting**: Static files - can be hosted on any web server, GitHub Pages, Netlify, etc.
 
 ## Development Commands
@@ -24,156 +24,221 @@ python -m http.server 8000
 # Then visit http://localhost:8000
 ```
 
-For production, upload the three files (index.html, styles.css, app.js) to any web host.
+For production, upload all files and directories to any web host.
 
 ## Architecture
 
 ### File Structure
 ```
 /
-├── index.html       # Main HTML structure with chat container
-├── styles.css       # Chat bubble UI styling (iMessage-like)
-└── app.js           # Quiz logic, flow control, and webhook integration
+├── index.html              # Main HTML structure (landing + chat pages)
+├── css/
+│   └── styles.css          # WhatsApp-style UI styling
+├── js/
+│   ├── quiz-content.js     # Quiz questions and flow content
+│   ├── quiz-logic.js       # Scoring and red flag logic
+│   └── quiz-app.js         # Main application controller
+├── assets/
+│   ├── rebecca-avatar.png  # Rebecca Taylor's avatar (to be added)
+│   └── rebecca-avatar.svg  # SVG fallback avatar
+├── CLAUDE.md               # This file
+└── README.md               # Project readme
 ```
 
-### Quiz Flow (7 Stages)
+### Quiz Flow (5 Sections, 18 Questions)
 
-1. **Welcome Landing**: Full-screen welcome with headline "Discover Your Personal Gut Health Protocol" and "Begin Your Journey" button
-2. **Chat Initiation**: After clicking start, transitions to chat interface with progress bar visible
-3. **Red Flag Screening**: Rome IV criteria questions to identify serious conditions requiring medical attention
-   - Allows users to continue after warning but flags the response
-4. **Symptom Pattern Assessment**: 5 questions to determine symptoms and triggers
-   - Routes user to appropriate protocol based on primary complaint
-5. **Open-Ended Questions**: 2 text-based questions capturing current situation and goals
-6. **Contact Information**: Name and email capture
-7. **Thank You**: Confirmation that protocol will be emailed within 24 hours
+1. **Landing Page**: Full-screen with team credentials, value proposition, and "Start My Assessment" button
+2. **Intro Messages**: Rebecca introduces herself and explains the assessment
+3. **Part 1 - Safety Screening**: 4 red flag questions (Rome IV criteria)
+   - Unintentional weight loss, blood in stool, family history, colonoscopy status
+   - Red flags trigger warning with option to exit or continue
+4. **Part 2 - Symptom Pattern**: 5 questions about primary complaints and patterns
+5. **Part 3 - History**: 3 questions about duration, diagnoses, and treatments tried
+6. **Part 4 - Gut-Brain Connection**: 3 questions about stress and mental health impact
+7. **Part 5 - Life Impact**: 1 question + 2 open-ended text responses
+8. **Email Capture**: Name and email collection
+9. **Confirmation**: Thank you message with next steps
 
-### Progress Tracking
+### Protocol Routing Logic (js/quiz-logic.js)
 
-A progress bar appears at the top of the chat interface (after the welcome screen) showing completion percentage. The bar updates after each question is answered. Total questions: 14. Progress is calculated as `(completedQuestions / 14) * 100`.
+The app routes users to 6 different protocols based on responses:
 
-### Protocol Routing Logic (app.js)
+| Protocol | Trigger Conditions |
+|----------|-------------------|
+| **Protocol 6: Gut-Brain Dominant** | Significant stress + mental health impact (checked first) |
+| **Protocol 5: Post-SIBO Recovery** | SIBO diagnosis or SIBO antibiotic treatment history |
+| **Protocol 4: Mixed Pattern (IBS-M)** | Alternating symptoms or frequency/stool changes |
+| **Protocol 3: Diarrhea-Dominant (IBS-D)** | Primary complaint: diarrhea, or increased frequency + loose stools |
+| **Protocol 2: Constipation-Dominant (IBS-C)** | Primary complaint: constipation, or decreased frequency + hard stools |
+| **Protocol 1: Bloating-Dominant** | Primary complaint: bloating or gas (default) |
 
-The app routes users to 6 different protocols based on their primary complaint:
-
-- **Bloating Protocol**: Primary complaint = "Bloating/Gas"
-- **IBS-C Protocol**: Primary complaint = "Constipation"
-- **IBS-D Protocol**: Primary complaint = "Diarrhea"
-- **IBS-M Protocol**: Primary complaint = "Alternating constipation & diarrhea"
-- **Post-SIBO Protocol**: Primary complaint = "Recently treated for SIBO"
-- **Gut-Brain Protocol**: Primary complaint = "Anxiety/Depression affecting digestion"
-
-Additional modifier: If stress impact is significant, "(with Gut-Brain support)" is appended to non-Gut-Brain protocols.
+Additional modifier: If stress impact is significant (not Gut-Brain protocol), "(with Gut-Brain support)" is appended.
 
 ### Data Structure
 
-All user responses are stored in the `userData` object (app.js:7-16):
+User responses are stored in the `state` object (js/quiz-app.js):
 
 ```javascript
 {
-    timestamp: ISO timestamp,
-    responses: {}, // All question responses
-    protocol: '',  // Calculated protocol name
-    name: '',
-    email: '',
-    currentSituation: '', // Open-ended response 1
-    goals: ''             // Open-ended response 2
+  currentSection: string,     // Current quiz section
+  currentStepIndex: number,   // Step within section
+  answers: {                  // All question responses
+    q1_weight_loss: string,
+    q2_blood: string,
+    // ... all question IDs
+    q17_hardest_part: string, // Open-ended
+    q18_vision: string,       // Open-ended
+    had_red_flags: boolean
+  },
+  userName: string,
+  userEmail: string,
+  protocol: {
+    protocol: number,
+    name: string,
+    description: string
+  }
 }
 ```
 
-### Webhook Configuration
+### Form Submission Configuration
 
-**IMPORTANT**: Before deploying, update the webhook URL in app.js:3:
+**IMPORTANT**: Before deploying, update the Formspree URL in js/quiz-app.js:
+
 ```javascript
-const WEBHOOK_URL = 'YOUR_WEBHOOK_URL_HERE';
+const CONFIG = {
+  FORMSPREE_URL: 'https://formspree.io/f/YOUR_FORM_ID',
+  // ...
+};
 ```
 
-This should be replaced with your Make.com or Zapier webhook URL that forwards data to Google Sheets.
+1. Create a free account at [formspree.io](https://formspree.io)
+2. Create a new form and copy the form ID
+3. Replace `YOUR_FORM_ID` with your actual form ID
+
+Data is also saved to localStorage as a backup.
+
+### Rebecca Taylor Avatar
+
+**IMPORTANT**: Add the Rebecca Taylor avatar image:
+
+1. Save the provided image as `assets/rebecca-avatar.png`
+2. Recommended size: 200x200px or larger (will be scaled down)
+3. The SVG fallback will be used if PNG is not available
 
 ## Key Implementation Details
 
-### Question System (app.js:17-147)
+### Quiz Content Structure (js/quiz-content.js)
 
-Questions are defined in the `questions` object with the following structure:
-- `type`: 'choice', 'text', 'email', 'message', or 'final'
-- `message`: Optional intro message before question
-- `question`: The actual question text
-- `buttons`: Array of choices (for type='choice')
-- `field`: Database field name to store response
-- `next`: ID of next question (or 'evaluateRome'/'evaluateProtocol' for branching)
+Questions are defined in the `quizContent` object with sections containing arrays of steps:
 
-### Special Evaluation Points
+```javascript
+{
+  type: 'message' | 'question' | 'buttons',
+  id: string,           // For questions only
+  delay: number,        // Typing indicator duration
+  content: string,      // Message text
+  inputType: 'single' | 'multi' | 'text' | 'email' | 'name',
+  options: [{           // For single/multi/buttons
+    text: string,
+    value: string,
+    redFlag: boolean,   // For safety questions
+    next: string        // Next section key
+  }],
+  next: string          // Next section after response
+}
+```
 
-- `evaluateRome` (app.js:338-359): Checks for red flags and shows warning if needed
-- `evaluateProtocol` (app.js:375-399): Determines which protocol to assign based on responses
+### Special Flow Points
 
-### UI Interaction Patterns
+- `check_red_flags`: After safety screening, routes to warning or continues
+- `red_flag_warning`: Displays warning with exit/continue options
+- `confirmation`: Triggers form submission before showing final message
 
-- **Typing Indicator**: Shows 3 animated dots before each bot message (1.5s delay)
-- **Message Animation**: Slide-in animation for new messages
-- **Auto-scroll**: Chat automatically scrolls to show newest message
+### UI Components
+
+- **Typing Indicator**: 3 animated dots before each bot message
+- **Message Animation**: Fade-in animation for new messages
+- **Auto-scroll**: Chat scrolls to newest message
 - **Input Types**:
-  - Button choices for multiple choice questions
-  - Text input with send button for open-ended responses
-  - Email validation for email capture
+  - Single-select buttons
+  - Multi-select checkboxes with "Continue" button
+  - Text/textarea input with send button
+  - Email input with validation
 
-## Styling Notes (styles.css)
+## Styling Notes (css/styles.css)
 
-- **Color Scheme**: Calming green tones (#52a675 primary, #3d8e5f darker green)
-- **Mobile-first responsive design**
-- **Welcome Screen**: Full-screen with centered content, green gradient button
-- **Chat Bubbles**:
-  - Bot messages: left-aligned, gray background (#e5e5ea) with tail
-  - User messages: right-aligned, green background (#52a675) with tail
-  - Border radius: 20px with one corner at 4px for tail effect
-  - CSS pseudo-elements (::before and ::after) create iMessage-style bubble tails
-- **Progress Bar**: White bar on semi-transparent background in header, animates on update
-- **Warning messages**: Yellow background with left border (Rome IV red flags)
-- **Breakpoint**: 768px for mobile adjustments
-- **Full-height containers** on mobile (100vh)
+### Color Palette
+```css
+--primary-green: #25D366;      /* WhatsApp green - buttons, online indicator */
+--chat-bg: #ECE5DD;            /* WhatsApp chat background */
+--white: #FFFFFF;              /* Rebecca's message bubbles */
+--user-bubble: #DCF8C6;        /* User's message bubbles (light green) */
+--text-dark: #111B21;          /* Primary text */
+--text-secondary: #667781;     /* Secondary text */
+--header-bg: #075E54;          /* Dark teal header */
+--disclaimer-bg: #F0F0F0;      /* Light gray for disclaimer */
+--warning-red: #DC3545;        /* Red flag warnings */
+```
+
+### Key Styling Features
+- Mobile-first responsive design
+- WhatsApp-style message bubbles (left/right aligned)
+- Persistent medical disclaimer footer
+- Animated typing indicator
+- Online status indicator with pulse animation
 
 ## Modifications & Extensions
 
 ### Adding New Questions
 
-1. Add question object to `questions` object in app.js
-2. Set appropriate `type`, `message`, `question`, `buttons`, `field`, and `next`
-3. Update previous question's `next` field to point to new question
-4. If adding branching logic, create evaluation function similar to `evaluateRomeFlags()`
+1. Add question object to appropriate section in `js/quiz-content.js`
+2. Set appropriate `type`, `id`, `content`, `inputType`, `options`, and `next`
+3. Update the `next` property of the previous question to point to new section
+4. If multi-select, update protocol logic in `js/quiz-logic.js` if needed
 
 ### Adding New Protocols
 
-1. Update symptom pattern question buttons (app.js:60)
-2. Add routing logic in `determineProtocol()` function (app.js:375-399)
-3. Consider updating protocol refinement logic if needed
+1. Update `determineProtocol()` function in `js/quiz-logic.js`
+2. Add new routing conditions
+3. Return new protocol object with number, name, and description
 
 ### Customizing Styling
 
-- **Colors**: Update CSS colors in styles.css:
-  - Primary green: #52a675 (user bubbles, buttons, gradients)
-  - Dark green: #3d8e5f (hover states)
-  - Bot bubbles: #e5e5ea
-  - Background gradients: lines 9, 62, 96 in styles.css
-- **Welcome Screen**: Edit headline/subheadline text in index.html:12-13
-- **Timing**: Adjust `TYPING_DELAY` constant in app.js:3
-- **Layout**: Modify `.chat-container` max-width and height in styles.css
-- **Progress Bar**: Adjust totalQuestions (app.js:158) if adding/removing questions
+- **Colors**: Update CSS variables in `:root` in `css/styles.css`
+- **Layout**: Modify `.chat-page` max-width in CSS
+- **Timing**: Adjust `DEFAULT_DELAY` in `js/quiz-app.js`
 
 ## Testing Checklist
 
 When making changes, test:
-- [ ] Welcome screen displays correctly with headline and button
-- [ ] "Begin Your Journey" button transitions to chat interface
-- [ ] Progress bar appears after starting and updates correctly
-- [ ] All question flows complete successfully
-- [ ] Red flag warning displays for Rome IV criteria
+- [ ] Landing page displays correctly with credentials
+- [ ] "Start My Assessment" button transitions to chat
+- [ ] All 18 questions flow correctly
+- [ ] Red flag warning displays and routes properly
+- [ ] Multi-select questions work (select/deselect, continue)
+- [ ] Text inputs accept submissions (button + Enter key)
+- [ ] Email validation works
 - [ ] Protocol routing works for all 6 protocols
-- [ ] Webhook receives complete data payload
-- [ ] Mobile responsive design (test on actual device)
-- [ ] Email validation prevents invalid emails
-- [ ] Text inputs accept Enter key for submission
+- [ ] Form submission to Formspree works
+- [ ] localStorage backup saves data
+- [ ] Mobile responsive design works
 - [ ] Typing indicators display correctly
-- [ ] Messages scroll properly on overflow
-- [ ] Chat bubble tails render correctly on both sides
-- [ ] Button clicks work without errors
-- [ ] Green color scheme displays consistently
+- [ ] Medical disclaimer footer stays visible
+- [ ] Avatar fallback works if PNG missing
+
+## Common Issues
+
+### Avatar not showing
+- Ensure `assets/rebecca-avatar.png` exists
+- Check browser console for 404 errors
+- SVG fallback should display if PNG missing
+
+### Form not submitting
+- Verify Formspree URL is correct
+- Check browser console for errors
+- Data still saves to localStorage as backup
+
+### Styling issues on mobile
+- Test on actual device, not just browser resize
+- Check viewport meta tag in HTML
+- Verify CSS media queries
