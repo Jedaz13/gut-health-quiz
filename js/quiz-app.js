@@ -350,6 +350,8 @@ async function handleButtonSelection(value, next, options) {
 
   // Handle special navigation
   if (next) {
+    // Reset processing flag to allow next section to run
+    state.isProcessing = false;
     await processSection(next);
   }
 }
@@ -492,6 +494,8 @@ function waitForResponse(step) {
  * Handle red flag check after safety screening
  */
 async function handleRedFlagCheck() {
+  // Reset processing flag to allow next section to run
+  state.isProcessing = false;
   if (state.answers.had_red_flags) {
     await processSection('red_flag_warning');
   } else {
