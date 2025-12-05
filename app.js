@@ -1,5 +1,5 @@
 // Configuration
-const WEBHOOK_URL = 'YOUR_WEBHOOK_URL_HERE'; // Replace with your Make/Zapier webhook URL
+const WEBHOOK_URL = 'https://hook.eu1.make.com/5uubblyocz70syh9xptkg248ycauy5pd';
 const TYPING_DELAY = 1500; // Milliseconds to show typing indicator
 
 // User data storage
@@ -541,23 +541,71 @@ async function determineProtocol() {
     await showQuestion('openEnded1');
 }
 
+// Get protocol number from protocol name
+function getProtocolNumber(protocolName) {
+    if (protocolName.includes('Bloating')) return 1;
+    if (protocolName.includes('IBS-C')) return 2;
+    if (protocolName.includes('IBS-D')) return 3;
+    if (protocolName.includes('IBS-M')) return 4;
+    if (protocolName.includes('Post-SIBO')) return 5;
+    if (protocolName.includes('Gut-Brain')) return 6;
+    return 0;
+}
+
 // Submit data to webhook
 async function submitData() {
+    // Prepare comprehensive submission data
+    const submission = {
+        // Timestamp
+        submitted_at: new Date().toISOString(),
+
+        // Contact Info
+        name: userData.name || '',
+        email: userData.email || '',
+
+        // Protocol Assignment
+        protocol_number: getProtocolNumber(userData.protocol),
+        protocol_name: userData.protocol || '',
+
+        // Red Flag Screening (Rome IV Criteria)
+        q1_weight_loss: userData.responses.rome_weight_loss || '',
+        q2_blood_in_stool: userData.responses.rome_blood_stool || '',
+        q3_family_history: userData.responses.rome_family_history || '',
+        q4_no_colonoscopy: userData.responses.rome_no_colonoscopy || '',
+        had_red_flags: userData.responses.had_red_flags || 'No',
+        continued_after_warning: userData.responses.continue_after_warning || '',
+
+        // Symptom Pattern Assessment
+        q5_primary_complaint: userData.responses.primary_complaint || '',
+        q6_symptom_frequency: userData.responses.symptom_frequency || '',
+        q7_worse_after_eating: userData.responses.worse_after_eating || '',
+        q8_food_triggers: userData.responses.food_triggers || '',
+        q9_stress_impact: userData.responses.stress_impact || '',
+
+        // Open-Ended Responses (valuable for copywriting)
+        q10_current_situation: userData.currentSituation || '',
+        q11_goals: userData.goals || ''
+    };
+
+    console.log('Submitting to webhook:', submission);
+
     try {
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(userData)
+            body: JSON.stringify(submission)
         });
 
-        if (!response.ok) {
-            console.error('Webhook submission failed:', response.statusText);
+        if (response.ok) {
+            console.log('✅ Quiz submission sent successfully');
+        } else {
+            console.error('❌ Webhook submission failed:', response.status, response.statusText);
             // Still show success message to user to not disrupt their experience
         }
     } catch (error) {
-        console.error('Error submitting data:', error);
+        console.error('❌ Error submitting data:', error);
         // Still show success message to user
     }
 }
