@@ -304,10 +304,11 @@ function renderTextInput(placeholder, type = 'text') {
 function waitForButtonClick(options) {
   return new Promise(resolve => {
     const handleClick = (e) => {
-      if (e.target.classList.contains('option-button')) {
-        const value = e.target.dataset.value;
-        const next = e.target.dataset.next;
-        const text = e.target.textContent;
+      const button = e.target.closest('.option-button');
+      if (button) {
+        const value = button.dataset.value;
+        const next = button.dataset.next;
+        const text = button.textContent;
 
         // Remove listener before processing
         inputContainer.removeEventListener('click', handleClick);
@@ -350,6 +351,8 @@ async function handleButtonSelection(value, next, options) {
 
   // Handle special navigation
   if (next) {
+    // Reset processing flag to allow next section to run
+    state.isProcessing = false;
     await processSection(next);
   }
 }
@@ -365,9 +368,10 @@ function waitForResponse(step) {
       renderButtons(step.options);
 
       const handleClick = async (e) => {
-        if (e.target.classList.contains('option-button')) {
-          const value = e.target.dataset.value;
-          const text = e.target.textContent;
+        const button = e.target.closest('.option-button');
+        if (button) {
+          const value = button.dataset.value;
+          const text = button.textContent;
 
           // Remove listener before processing
           inputContainer.removeEventListener('click', handleClick);
@@ -492,6 +496,8 @@ function waitForResponse(step) {
  * Handle red flag check after safety screening
  */
 async function handleRedFlagCheck() {
+  // Reset processing flag to allow next section to run
+  state.isProcessing = false;
   if (state.answers.had_red_flags) {
     await processSection('red_flag_warning');
   } else {
