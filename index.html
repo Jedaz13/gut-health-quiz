@@ -2,32 +2,106 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personalized Gut Health Protocol</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gut Health Assessment | Gut Healing Academy</title>
+    <meta name="description" content="Take our 5-minute gut health assessment to discover your personalized protocol. Built by registered dietitians and clinical nutritionists.">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Preload avatar -->
+    <link rel="preload" href="assets/rebecca-avatar.png" as="image">
+    <style>
+        /* Fallback avatar styles */
+        .header-avatar, .message-avatar {
+            background: linear-gradient(135deg, #075E54 0%, #128C7E 100%);
+            color: white;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-    <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-content">
-            <h1 class="welcome-headline">Discover Your Personal Gut Health Protocol</h1>
-            <p class="welcome-subheadline">Take the first step toward lasting relief and digestive wellness. In just 5 minutes, we'll create a personalized path to help you transform your gut health.</p>
-            <button class="start-button" onclick="startQuiz()">Begin Your Journey</button>
-        </div>
-    </div>
-    <div class="chat-container" id="chatContainer" style="display: none;">
-        <div class="chat-header">
-            <h1>Gut Health Assessment</h1>
-            <div class="progress-bar" id="progressBar" style="display: none;">
-                <div class="progress-fill" id="progressFill"></div>
+
+    <!-- LANDING PAGE -->
+    <div class="landing-page" id="landingPage">
+        <header class="landing-header">
+            <h1>GUT HEALTH ASSESSMENT</h1>
+            <p class="credentials">Built by a clinical team of Registered Dietitians, Clinical Nutritionists, and Monash-certified FODMAP specialists</p>
+        </header>
+
+        <main class="landing-content">
+            <h2>Finally, an assessment that actually listens.</h2>
+
+            <p>You've probably answered a hundred symptom questionnaires. Checked boxes. Gotten generic advice. Nothing changed.</p>
+
+            <p class="emphasis">This is different.</p>
+
+            <p>In the next 5 minutes, we'll map exactly what's happening in your gut - not just your symptoms, but the pattern behind them. The same framework our clinical team uses to identify which of 6 distinct gut patterns you're dealing with.</p>
+
+            <div class="transformation-box">
+                <p><strong>Where you are now:</strong> Bloated by 3pm. Afraid of lunch. Mapping bathrooms everywhere you go.</p>
+                <p><strong>Where we're taking you:</strong> Eating with confidence. Flat stomach by evening. Freedom to say yes to dinner invitations.</p>
             </div>
-        </div>
-        <div class="chat-messages" id="chatMessages">
+
+            <button class="start-button" id="startButton">Start My Assessment &rarr;</button>
+        </main>
+
+        <footer class="disclaimer-footer">
+            <div class="disclaimer-content">
+                <div class="disclaimer-header">
+                    <span class="disclaimer-icon">&#9877;</span>
+                    <span class="disclaimer-title">Medical Disclaimer</span>
+                </div>
+                <p>
+                    This assessment is for educational purposes only and does not constitute medical advice, diagnosis, or treatment. It is not a substitute for professional medical consultation. If you are experiencing severe symptoms, unexplained weight loss, blood in stool, or any symptoms that concern you, please consult a qualified healthcare provider immediately. The information provided through this assessment is designed to support - not replace - the relationship between you and your healthcare providers. Gut Healing Academy does not provide medical diagnoses or treatment recommendations. By using this assessment, you acknowledge that you have read and understood this disclaimer.
+                </p>
+                <div class="disclaimer-links">
+                    <a href="/privacy-policy">Privacy Policy</a>
+                    <span>|</span>
+                    <a href="/terms">Terms of Service</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- CHAT PAGE -->
+    <div class="chat-page" id="chatPage">
+        <!-- Chat Header -->
+        <header class="chat-header">
+            <button class="back-button" id="backButton" aria-label="Go back">&larr;</button>
+            <img src="assets/rebecca-avatar.png" alt="Rebecca Taylor" class="header-avatar" onerror="this.onerror=null; this.src='assets/rebecca-avatar.svg';">
+            <div class="header-info">
+                <h2>Rebecca Taylor, RNutr</h2>
+                <span class="online-status">
+                    <span class="online-dot"></span> Online
+                </span>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <div class="chat-area" id="chatArea">
             <!-- Messages will be dynamically inserted here -->
         </div>
-        <div class="chat-input-container" id="chatInputContainer">
-            <!-- Input will be dynamically inserted based on question type -->
+
+        <!-- Input Container -->
+        <div id="inputContainer">
+            <!-- Input controls will be dynamically inserted here -->
         </div>
+
+        <!-- Disclaimer Footer -->
+        <footer class="disclaimer-footer">
+            <div class="disclaimer-content">
+                <div class="disclaimer-header">
+                    <span class="disclaimer-icon">&#9877;</span>
+                    <span class="disclaimer-title">Medical Disclaimer</span>
+                </div>
+                <p>
+                    This assessment is for educational purposes only and does not constitute medical advice, diagnosis, or treatment. Consult a healthcare provider for medical concerns.
+                </p>
+            </div>
+        </footer>
     </div>
-    <script src="app.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/quiz-content.js"></script>
+    <script src="js/quiz-logic.js"></script>
+    <script src="js/quiz-app.js"></script>
 </body>
 </html>
