@@ -128,8 +128,11 @@ async function processStep(step) {
       break;
 
     case 'question':
-      await showTypingIndicator(delay);
-      addMessage(replaceVariables(step.content), 'rebecca');
+      // Only show typing indicator and message if there's content
+      if (step.content) {
+        await showTypingIndicator(delay);
+        addMessage(replaceVariables(step.content), 'rebecca');
+      }
 
       // Wait for user response
       await waitForResponse(step);
@@ -470,9 +473,9 @@ function waitForResponse(step) {
         state.answers[step.id] = value;
 
         // Store name/email in state
-        if (step.id === 'name') {
+        if (step.id === 'name' || step.id === 'exit_name') {
           state.userName = value;
-        } else if (step.id === 'email') {
+        } else if (step.id === 'email' || step.id === 'exit_email') {
           state.userEmail = value;
         }
 
@@ -593,6 +596,60 @@ processSection = async function(sectionKey) {
   if (sectionKey === 'confirmation') {
     // Submit data before showing confirmation
     await submitToFormspree();
+  } else if (sectionKey === 'exit_final') {
+    // Submit red flag exit data
+    await submitRedFlagExit();
   }
   return originalProcessSection.call(this, sectionKey);
 };
+
+/**
+ * Submit red flag exit data to Formspree
+ */
+async function submitRedFlagExit() {
+  const submission = {
+    name: state.userName,
+    email: state.userEmail,
+    red_flag_exit: true,
+    had_red_flags: true,
+    answers: state.answers,
+    submitted_at: new Date().toISOString()
+  };
+
+  // Save to localStorage as backup
+  try {
+    const existingData = localStorage.getItem('gutQuizRedFlagExits') || '[]';
+    const submissions = JSON.parse(existingData);
+    submissions.push(submission);
+    localStorage.setItem('gutQuizRedFlagExits', JSON.stringify(submissions));
+  } catch (e) {
+    console.error('Failed to save to localStorage:', e);
+  }
+
+  // Submit to Formspree
+  try {
+    const response = await fetch(CONFIG.FORMSPREE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        name: state.userName,
+        email: state.userEmail,
+        type: 'red_flag_exit',
+        message: 'User exited after red flag warning - requested supportive tips',
+        all_answers: JSON.stringify(state.answers),
+        submitted_at: new Date().toISOString()
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Formspree submission failed:', response.statusText);
+    } else {
+      console.log('Red flag exit submission successful');
+    }
+  } catch (error) {
+    console.error('Error submitting to Formspree:', error);
+  }
+}
