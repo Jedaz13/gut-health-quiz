@@ -137,7 +137,45 @@ const quizContent = {
     {
       type: "message",
       delay: 1000,
-      content: "That's the right call. Please come back after you've been evaluated - we'll be here.\n\nTake care of yourself."
+      content: "That's the right call.\n\nBefore you go - I'd love to send you some gentle gut-supportive tips you can use while you wait for your appointment. Nothing intense, just small things that can help you feel a bit better in the meantime."
+    },
+    {
+      type: "question",
+      id: "exit_name",
+      delay: 800,
+      content: "What's your first name?",
+      inputType: "name",
+      placeholder: "Your first name",
+      next: "exit_get_email"
+    }
+  ],
+
+  exit_get_email: [
+    {
+      type: "message",
+      delay: 800,
+      content: "Nice to meet you, {{name}}!\n\nWhere should I send your supportive tips?"
+    },
+    {
+      type: "question",
+      id: "exit_email",
+      delay: 500,
+      inputType: "email",
+      placeholder: "your@email.com",
+      next: "exit_final"
+    }
+  ],
+
+  exit_final: [
+    {
+      type: "message",
+      delay: 1000,
+      content: "Perfect, {{name}}! I'll send those tips your way.\n\nOnce you've been cleared by your doctor, come back and complete this assessment - we'll match you to the right protocol for your situation."
+    },
+    {
+      type: "message",
+      delay: 1000,
+      content: "Take care of yourself, and I'll see you soon."
     }
   ],
 
