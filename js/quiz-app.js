@@ -506,12 +506,16 @@ function replaceVariables(text) {
 }
 
 /**
- * Scroll chat area to bottom
+ * Scroll chat area to bottom with smooth scrolling
  */
 function scrollToBottom() {
-  setTimeout(() => {
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }, 50);
+  // Use requestAnimationFrame to ensure DOM has updated before scrolling
+  requestAnimationFrame(() => {
+    chatArea.scroll({
+      top: chatArea.scrollHeight,
+      behavior: 'smooth'
+    });
+  });
 }
 
 /**
