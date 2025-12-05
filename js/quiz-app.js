@@ -195,10 +195,12 @@ function addMessage(content, sender, isWarning = false) {
 }
 
 /**
- * Render option buttons
+ * Render option buttons with click handlers
  * @param {Array} options - Array of option objects
+ * @param {Function} onClickCallback - Callback when button is clicked
  */
-function renderButtons(options) {
+function renderButtons(options, onClickCallback) {
+  // Always get fresh reference to inputContainer
   const container = document.createElement('div');
   container.className = 'options-container';
 
@@ -208,11 +210,24 @@ function renderButtons(options) {
     button.textContent = option.text;
     button.dataset.value = option.value;
     button.dataset.next = option.next || '';
+
+    // Add direct click handler to each button
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Button clicked:', option.text, option.value);
+      if (onClickCallback) {
+        onClickCallback(option.value, option.next || '', option.text, option);
+      }
+    });
+
     container.appendChild(button);
   });
 
-  inputContainer.innerHTML = '';
-  inputContainer.appendChild(container);
+  // Get fresh reference and clear
+  const inputEl = document.getElementById('inputContainer');
+  inputEl.innerHTML = '';
+  inputEl.appendChild(container);
   scrollToBottom();
 }
 
@@ -303,31 +318,30 @@ function renderTextInput(placeholder, type = 'text') {
  */
 function waitForButtonClick(options) {
   return new Promise(resolve => {
-    const handleClick = (e) => {
-      const button = e.target.closest('.option-button');
-      if (button) {
-        const value = button.dataset.value;
-        const next = button.dataset.next;
-        const text = button.textContent;
+    let clicked = false;
 
-        // Remove listener before processing
-        inputContainer.removeEventListener('click', handleClick);
+    const handleButtonClick = async (value, next, text, option) => {
+      // Prevent double-clicks
+      if (clicked) return;
+      clicked = true;
 
-        // Add user message
-        addMessage(text, 'user');
+      console.log('waitForButtonClick handler:', value, next);
 
-        // Clear input
-        inputContainer.innerHTML = '';
+      // Add user message
+      addMessage(text, 'user');
 
-        // Process the selection
-        setTimeout(async () => {
-          await handleButtonSelection(value, next, options);
-          resolve();
-        }, 300);
-      }
+      // Clear input
+      document.getElementById('inputContainer').innerHTML = '';
+
+      // Process the selection after a short delay
+      setTimeout(async () => {
+        await handleButtonSelection(value, next, options);
+        resolve();
+      }, 300);
     };
 
-    inputContainer.addEventListener('click', handleClick);
+    // Render buttons with the click callback
+    renderButtons(options, handleButtonClick);
   });
 }
 
@@ -365,43 +379,40 @@ function waitForResponse(step) {
   return new Promise(async (resolve) => {
     if (step.inputType === 'single') {
       // Single select buttons
-      renderButtons(step.options);
+      let clicked = false;
 
-      const handleClick = async (e) => {
-        const button = e.target.closest('.option-button');
-        if (button) {
-          const value = button.dataset.value;
-          const text = button.textContent;
+      const handleButtonClick = async (value, next, text, option) => {
+        // Prevent double-clicks
+        if (clicked) return;
+        clicked = true;
 
-          // Remove listener before processing
-          inputContainer.removeEventListener('click', handleClick);
+        console.log('waitForResponse single handler:', value, step.next);
 
-          addMessage(text, 'user');
-          inputContainer.innerHTML = '';
+        addMessage(text, 'user');
+        document.getElementById('inputContainer').innerHTML = '';
 
-          // Store answer
-          state.answers[step.id] = value;
+        // Store answer
+        state.answers[step.id] = value;
 
-          // Check for red flag
-          const option = step.options.find(o => o.value === value);
-          if (option && option.redFlag) {
-            state.answers.had_red_flags = true;
-          }
-
-          // Handle special navigation
-          if (step.next === 'check_red_flags') {
-            await handleRedFlagCheck();
-          } else if (step.next) {
-            setTimeout(() => {
-              processSection(step.next);
-            }, 300);
-          }
-
-          resolve();
+        // Check for red flag
+        if (option && option.redFlag) {
+          state.answers.had_red_flags = true;
         }
+
+        // Handle special navigation
+        if (step.next === 'check_red_flags') {
+          await handleRedFlagCheck();
+        } else if (step.next) {
+          setTimeout(() => {
+            processSection(step.next);
+          }, 300);
+        }
+
+        resolve();
       };
 
-      inputContainer.addEventListener('click', handleClick);
+      // Render buttons with callback
+      renderButtons(step.options, handleButtonClick);
 
     } else if (step.inputType === 'multi') {
       // Multi-select checkboxes
